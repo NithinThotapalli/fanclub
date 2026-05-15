@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Fans Association Club </title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Syne:wght@400;700;800&family=Syne+Mono&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/SplitText.min.js"></script>
+<style>
+:root {
+  /* Light / minimal palette */
+  --gold: #111827;    /* primary accent (dark) */
+  --crimson: #6b7280; /* secondary muted */
+  --deep: #000000;    /* deep text */
+  --surface: #ffffff; /* page background */
+  --glass: rgba(0,0,0,0.04);
+  --border: rgba(0,0,0,0.08);
+  --text: #0b1220;    /* readable dark text */
+  --muted: #6b7280;
+  --green: #10b981;
+  --cursor-size: 12px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; overflow-x: hidden; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--surface);
+  color: var(--text);
+  overflow-x: hidden;
+  cursor: none;
+}
+
+/* ── CUSTOM CURSOR ── */
+#cursor {
+  position: fixed; top: 0; left: 0; z-index: 9999; pointer-events: none;
+  mix-blend-mode: difference;
+}
+#cursor-dot {
+  width: var(--cursor-size); height: var(--cursor-size);
+  background: var(--text); border-radius: 50%;
+  position: absolute; transform: translate(-50%,-50%);
+  transition: width .3s, height .3s, background .3s;
+}
+#cursor-ring {
+  width: 44px; height: 44px;
+  border: 1.5px solid rgba(0,0,0,0.12);
+  border-radius: 50%;
+  position: absolute; transform: translate(-50%,-50%);
+  transition: width .5s cubic-bezier(.34,1.56,.64,1), height .5s cubic-bezier(.34,1.56,.64,1), border-color .3s;
+}
+body.hovering #cursor-dot { width: 8px; height: 8px; background: var(--gold); }
+body.hovering #cursor-ring { width: 64px; height: 64px; border-color: var(--gold); }
+
+/* ── WEBGL CANVAS ── */
+#gl-canvas {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+}
+
+/* ── NOISE OVERLAY ── */
+.noise {
+  position: fixed; inset: 0; z-index: 1; pointer-events: none; display: none;
+}
+
+/* ── HEADER ── */
+header {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 48px;
+  backdrop-filter: blur(8px) saturate(120%);
+  background: rgba(255,255,255,0.85);
+  border-bottom: 1px solid var(--border);
+  transform: translateY(-100%);
+}
+.logo-wrap { display: flex; flex-direction: column; gap: 0; }
+.logo-main {
+  font-family: 'Syne', sans-serif; font-weight: 800;
+  font-size: 1.1rem; letter-spacing: 6px;
+  color: var(--gold); text-decoration: none;
+  text-transform: uppercase;
+}
+.logo-sub { font-family: 'Syne Mono', monospace; font-size: .55rem; color: var(--muted); letter-spacing: 3px; }
+
+nav { display: flex; gap: 36px; align-items: center; }
+.nav-link {
+  font-family: 'Syne', sans-serif; font-size: .75rem; font-weight: 700;
+  letter-spacing: 3px; text-transform: uppercase;
+  color: var(--muted); text-decoration: none;
+  position: relative; padding-bottom: 4px;
+  transition: color .3s;
+}
+.nav-link::after {
+  content: ''; position: absolute; bottom: 0; left: 0; width: 0; height: 1px;
+  background: var(--gold); transition: width .4s cubic-bezier(.77,0,.18,1);
+}
+.nav-link:hover { color: var(--gold); }
+.nav-link:hover::after { width: 100%; }
+
+/* ── HERO ── */
+.hero {
+  position: relative; z-index: 2;
+  min-height: 100vh; display: flex; flex-direction: column;
+  justify-content: center; align-items: flex-start;
+  padding: 140px 48px 80px;
+  overflow: hidden;
+}
+.hero-overline {
+  font-family: 'Syne Mono', monospace;
+  font-size: .7rem; letter-spacing: 5px; color: var(--crimson);
+  text-transform: uppercase; margin-bottom: 20px;
+  display: flex; align-items: center; gap: 12px;
+  opacity: 0;
+}
+.hero-overline::before {
+  content: ''; width: 32px; height: 1px; background: var(--crimson);
+}
+.live-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--crimson);
+  animation: livepulse 1.4s ease-in-out infinite;
+  display: inline-block;
+}
+@keyframes livepulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(200,16,46,0.7); }
+  50%      { box-shadow: 0 0 0 8px rgba(200,16,46,0); }
+}
+
+.hero-title {
+  font-family: 'Syne', sans-serif; font-weight: 800;
+  font-size: clamp(4rem, 10vw, 9rem);
+  line-height: .92; letter-spacing: -2px;
+  color: var(--text); overflow: hidden;
+  margin-bottom: 32px;
+}
+.hero-title .line { display: block; overflow: hidden; }
+.hero-title .line span { display: block; transform: translateY(110%); }
+.hero-title .accent { color: var(--gold); }
+.hero-title .stroke {
+  -webkit-text-stroke: 2px var(--gold);
+  color: transparent;
+}
+
+.hero-desc {
+  max-width: 480px; font-size: 1rem; line-height: 1.8;
+  color: var(--muted); margin-bottom: 48px;
+  opacity: 0; transform: translateY(20px);
+}
+
+.hero-cta { display: flex; gap: 16px; flex-wrap: wrap; opacity: 0; }
+
+/* MAGNETIC BUTTON */
+.mag-btn {
+  position: relative; overflow: hidden;
+  font-family: 'Syne', sans-serif; font-weight: 700;
+  font-size: .8rem; letter-spacing: 3px; text-transform: uppercase;
+  text-decoration: none;
+  padding: 18px 40px;
+  border-radius: 4px;
+  display: inline-flex; align-items: center; gap: 10px;
+  cursor: none; transition: color .3s;
+  border: none; outline: none;
+}
+.mag-btn-primary {
+  background: var(--gold); color: #ffffff;
+}
+.mag-btn-primary::before {
+  content: ''; position: absolute; inset: 0;
+  background: var(--crimson);
+  transform: scaleX(0); transform-origin: right;
+  transition: transform .5s cubic-bezier(.77,0,.18,1);
+  z-index: 0;
+}
+.mag-btn-primary:hover::before { transform: scaleX(1); transform-origin: left; }
+.mag-btn-primary:hover { color: #fff; }
+.mag-btn-primary span, .mag-btn-outline span { position: relative; z-index: 1; }
+
+.mag-btn-outline {
+  background: transparent; color: var(--gold);
+  border: 1px solid var(--gold);
+}
+.mag-btn-outline::before {
+  content: ''; position: absolute; inset: 0;
+  background: var(--gold);
+  transform: scaleX(0); transform-origin: right;
+  transition: transform .5s cubic-bezier(.77,0,.18,1);
+  z-index: 0;
+}
+.mag-btn-outline:hover::before { transform: scaleX(1); transform-origin: left; }
+.mag-btn-outline:hover { color: var(--deep); }
+
+/* ── SCROLLING TICKER ── */
+.ticker-wrap {
+  position: relative; z-index: 2;
+  overflow: hidden; white-space: nowrap;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 0;
+  background: transparent;
+}
+.ticker {
+  display: inline-block;
+  animation: ticker-scroll 18s linear infinite;
+  font-family: 'Syne', sans-serif; font-weight: 700;
+  font-size: .75rem; letter-spacing: 4px; text-transform: uppercase;
+  color: var(--gold);
+}
+.ticker span { margin: 0 48px; }
+.ticker .sep { color: var(--crimson); }
+@keyframes ticker-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+/* ── SECTIONS ── */
+.section {
+  position: relative; z-index: 2;
+  padding: 120px 48px;
+}
+
+.section-label {
+  font-family: 'Syne Mono', monospace;
+  font-size: .65rem; letter-spacing: 5px; color: var(--crimson);
+  text-transform: uppercase; margin-bottom: 16px;
+  display: flex; align-items: center; gap: 12px;
+}
+.section-label::before { content: ''; width: 24px; height: 1px; background: var(--crimson); }
+
+.section-title {
+  font-family: 'Syne', sans-serif; font-weight: 800;
+  font-size: clamp(2.5rem, 5vw, 4.5rem);
+  line-height: 1; letter-spacing: -1px;
+  margin-bottom: 64px;
+}
+
+/* ── FEATURES GRID ── */
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2px;
+  max-width: 1100px; margin: 0 auto;
+}
+@media(max-width:700px) { .features-grid { grid-template-columns: 1fr; } }
+
+.feat {
+  background: var(--glass);
+  border: 1px solid var(--border);
+  padding: 48px 40px;
+  position: relative; overflow: hidden;
+  transition: border-color .4s;
+  clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 0 100%);
+}
+.feat::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(240,165,0,0.06) 0%, transparent 60%);
+  opacity: 0; transition: opacity .4s;
+}
+.feat:hover { border-color: var(--gold); }
+.feat:hover::before { opacity: 1; }
+
+.feat-num {
+  font-family: 'Syne Mono', monospace;
+  font-size: 4rem; font-weight: 400;
+  color: rgba(240,165,0,0.08);
+  position: absolute; top: 24px; right: 28px;
+  line-height: 1; pointer-events: none;
+  transition: color .4s;
+}
+.feat:hover .feat-num { color: rgba(240,165,0,0.18); }
+
+.feat-icon-wrap {
+  width: 56px; height: 56px;
+  background: rgba(240,165,0,0.1);
+  border: 1px solid rgba(240,165,0,0.3);
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.5rem; margin-bottom: 24px;
+  transition: background .4s, transform .4s;
+}
+.feat:hover .feat-icon-wrap { background: rgba(240,165,0,0.2); transform: rotate(-6deg) scale(1.1); }
+
+.feat h3 {
+  font-family: 'Syne', sans-serif; font-weight: 700;
+  font-size: 1.25rem; letter-spacing: -.3px; margin-bottom: 12px;
+  color: var(--text);
+}
+.feat p { font-size: .88rem; line-height: 1.75; color: var(--muted); }
+
+/* ── PRICE SECTION ── */
+.price-section {
+  position: relative; z-index: 2;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 2px;
+  max-width: 1100px; margin: 0 auto;
+}
+@media(max-width:700px) { .price-section { grid-template-columns: 1fr; } }
+
+.price-left {
+  background: var(--surface);
+  padding: 80px 60px;
+  display: flex; flex-direction: column; justify-content: center;
+  clip-path: polygon(0 0, calc(100% - 30px) 0, 100% 30px, 100% 100%, 0 100%);
+  position: relative; overflow: hidden;
+}
+.price-left::after {
+  content: '₹';
+  position: absolute; bottom: -20px; right: -10px;
+  font-family: 'Syne', sans-serif; font-weight: 800;
+  font-size: 18rem; line-height: 1; color: rgba(0,0,0,0.07);
+  pointer-events: none;
+}
+.price-left .label {
+  font-family: 'Syne Mono', monospace;
+  font-size: .65rem; letter-spacing: 4px;
+  color: var(--muted); text-transform: uppercase; margin-bottom: 12px;
+}
+.price-left .amount {
+  font-family: 'Syne', sans-serif; font-weight: 800;
+  font-size: 9rem; line-height: 1; color: var(--deep);
+  letter-spacing: -6px;
+}
+.price-left .amount sup { font-size: 3rem; vertical-align: super; letter-spacing: 0; }
+.price-left .note { font-size: .85rem; color: var(--muted); margin-top: 16px; font-style: italic; }
+
+.price-right {
+  background: var(--glass);
+  border: 1px solid var(--border);
+  padding: 60px 48px;
+  display: flex; flex-direction: column; justify-content: space-between;
+}
+.price-right h3 {
+  font-family: 'Syne', sans-serif; font-weight: 800;
+  font-size: 2rem; letter-spacing: -1px; margin-bottom: 8px;
+}
+.price-right p { font-size: .88rem; color: var(--muted); line-height: 1.7; margin-bottom: 32px; }
+
+/* ── PAYMENT CARD ── */
+.payment-section {
+  position: relative; z-index: 2;
+  padding: 120px 48px;
+}
+.payment-inner {
+  max-width: 1100px; margin: 0 auto;
+  display: grid; grid-template-columns: 1fr 1.2fr; gap: 48px; align-items: center;
+}
+@media(max-width:768px) { .payment-inner { grid-template-columns: 1fr; } }
+
+.payment-info h2 {
+  font-family: 'Syne', sans-serif; font-weight: 800;
+  font-size: clamp(2rem, 4vw, 3.5rem); letter-spacing: -1px;
+  line-height: 1; margin-bottom: 24px;
+}
+.payment-info h2 em { color: var(--gold); font-style: normal; }
+.payment-info p { font-size: .9rem; color: var(--muted); line-height: 1.8; margin-bottom: 32px; }
+
+.steps { display: flex; flex-direction: column; gap: 20px; }
+.step {
+  display: flex; gap: 20px; align-items: flex-start;
+  padding: 20px 24px;
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  transition: border-color .3s, transform .3s;
+}
+.step:hover { border-color: var(--gold); transform: translateX(8px); }
+.step-num {
+  font-family: 'Syne Mono', monospace;
+  font-size: 1.5rem; color: var(--gold); flex-shrink: 0; line-height: 1.1;
+}
+.step-text strong {
+  display: block; font-family: 'Syne', sans-serif; font-weight: 700;
+  font-size: .95rem; margin-bottom: 4px;
+}
+.step-text span { font-size: .82rem; color: var(--muted); line-height: 1.6; }
+
+.payment-card {
+  background: linear-gradient(145deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 48px 40px;
+  text-align: center;
+  position: relative; overflow: hidden;
+  backdrop-filter: blur(20px);
+}
+.payment-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, var(--crimson), var(--gold));
+}
+.payment-card::after {
+  content: '';
+  position: absolute;
+  top: -50%; left: -50%; width: 200%; height: 200%;
+  background: conic-gradient(from 0deg at 50% 50%, transparent 0deg, rgba(240,165,0,0.03) 60deg, transparent 120deg);
+  animation: card-rotate 8s linear infinite;
+  pointer-events: none;
+}
+@keyframes card-rotate { to { transform: rotate(360deg); } }
+
+.qr-container {
+  display: inline-block;
+  position: relative; margin-bottom: 24px;
+}
+.qr-frame {
+  background: #fff;
+  border-radius: 16px;
+  padding: 16px;
+  position: relative; z-index: 1;
+  box-shadow: 0 0 0 1px rgba(240,165,0,0.3), 0 24px 60px rgba(0,0,0,0.5);
+  animation: qr-glow 3s ease-in-out infinite;
+}
+@keyframes qr-glow {
+  0%,100% { box-shadow: 0 0 0 1px rgba(240,165,0,0.3), 0 24px 60px rgba(0,0,0,0.5); }
+  50%      { box-shadow: 0 0 0 3px rgba(240,165,0,0.6), 0 24px 60px rgba(240,165,0,0.15); }
+}
+.qr-frame img { width: 180px; height: 180px; display: block; border-radius: 8px; }
+
+.scan-line {
+  position: absolute; left: 16px; right: 16px; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  top: 16px; z-index: 2;
+  animation: scan 2.5s ease-in-out infinite;
+  border-radius: 2px;
+}
+@keyframes scan {
+  0%   { top: 16px; opacity: 1; }
+  90%  { top: calc(100% - 18px); opacity: 1; }
+  100% { top: 16px; opacity: 0; }
+}
+
+.upi-chip {
+  display: inline-flex; align-items: center; gap: 10px;
+  background: rgba(240,165,0,0.1);
+  border: 1px solid rgba(240,165,0,0.35);
+  border-radius: 100px;
+  padding: 10px 22px;
+  font-family: 'Syne Mono', monospace;
+  font-size: .8rem; color: var(--gold);
+  margin-bottom: 28px; cursor: pointer;
+  transition: background .3s, transform .2s;
+  position: relative; z-index: 1;
+}
+.upi-chip:hover { background: rgba(240,165,0,0.2); transform: scale(1.03); }
+.copy-icon { width: 14px; height: 14px; opacity: .7; flex-shrink: 0; }
+
+.btn-upi {
+  display: block; width: 100%;
+  background: linear-gradient(135deg, var(--gold) 0%, #e08900 100%);
+  color: var(--deep);
+  font-family: 'Syne', sans-serif; font-weight: 800;
+  font-size: 1rem; letter-spacing: 4px; text-transform: uppercase;
+  text-decoration: none;
+  padding: 18px 24px;
+  border-radius: 4px;
+  border: none; cursor: none;
+  margin-bottom: 14px;
+  position: relative; overflow: hidden; z-index: 1;
+  transition: transform .3s;
+}
+.btn-upi::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: var(--crimson);
+  transform: translateX(-100%);
+  transition: transform .5s cubic-bezier(.77,0,.18,1);
+}
+.btn-upi:hover::before { transform: translateX(0); }
+.btn-upi:hover { transform: translateY(-2px); color: #fff; }
+.btn-upi span { position: relative; z-index: 1; }
+
+.btn-whatsapp {
+  display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%;
+  background: rgba(37,211,102,0.1);
+  border: 1px solid rgba(37,211,102,0.4);
+  color: #25d366;
+  font-family: 'Syne', sans-serif; font-weight: 700;
+  font-size: .85rem; letter-spacing: 2px; text-transform: uppercase;
+  text-decoration: none;
+  padding: 16px 24px;
+  border-radius: 4px;
+  cursor: none;
+  position: relative; overflow: hidden; z-index: 1;
+  transition: border-color .3s, background .3s;
+}
+.btn-whatsapp:hover { background: rgba(37,211,102,0.2); border-color: #25d366; }
+.wa-icon { width: 20px; height: 20px; flex-shrink: 0; }
+
+.pay-note {
+  margin-top: 18px;
+  font-size: .73rem; color: var(--muted); line-height: 1.7;
+  position: relative; z-index: 1;
+}
+.pay-note a { color: var(--gold); text-decoration: none; }
+
+/* ── STATS ROW ── */
+.stats-row {
+  position: relative; z-index: 2;
+  display: grid; grid-template-columns: repeat(3,1fr);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+@media(max-width:600px) { .stats-row { grid-template-columns: 1fr; } }
+.stat {
+  padding: 56px 48px;
+  border-right: 1px solid var(--border);
+  text-align: center;
+}
+.stat:last-child { border-right: none; }
+.stat-val {
+  font-family: 'Syne', sans-serif; font-weight: 800;
+  font-size: clamp(3rem, 5vw, 5rem);
+  line-height: 1; color: var(--gold);
+  letter-spacing: -2px;
+  display: block;
+}
+.stat-label {
+  font-size: .75rem; color: var(--muted);
+  letter-spacing: 3px; text-transform: uppercase;
+  margin-top: 10px; display: block;
+  font-family: 'Syne', sans-serif; font-weight: 700;
+}
+
+/* ── FOOTER ── */
+footer {
+  position: relative; z-index: 2;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 28px 48px;
+  border-top: 1px solid var(--border);
+  font-size: .75rem; color: var(--muted);
+  font-family: 'Syne Mono', monospace;
+  flex-wrap: wrap; gap: 16px;
+}
+footer a { color: var(--gold); text-decoration: none; letter-spacing: 1px; }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed; bottom: 36px; right: 36px; z-index: 9999;
+  background: #0a1f0a; border: 1px solid #25d366; color: #25d366;
+  padding: 14px 28px; border-radius: 4px;
+  font-family: 'Syne Mono', monospace; font-size: .78rem; letter-spacing: 1px;
+  transform: translateY(100px) scale(.9); opacity: 0;
+  transition: transform .5s cubic-bezier(.34,1.56,.64,1), opacity .4s;
+  pointer-events: none;
+}
+.toast.show { transform: translateY(0) scale(1); opacity: 1; }
+
+/* ── SCROLL PROGRESS ── */
+#progress {
+  position: fixed; top: 0; left: 0; height: 2px; z-index: 200;
+  background: linear-gradient(90deg, var(--crimson), var(--gold));
+  transform-origin: left; transform: scaleX(0);
+  transition: transform .1s;
+}
+
+/* ── PAGE TRANSITIONS ── */
+.page-transition {
+  position: fixed; inset: 0; z-index: 1000;
+  background: var(--crimson);
+  transform: scaleX(0); transform-origin: left;
+  pointer-events: none;
+}
+
+@media (max-width: 1024px) {
+  header {
+    padding: 18px 24px;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  nav {
+    gap: 20px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .hero {
+    padding: 132px 24px 72px;
+  }
+  .section,
+  .payment-section,
+  footer {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+  .payment-inner,
+  .price-section {
+    gap: 24px;
+  }
+}
+
+@media (max-width: 768px) {
+  #cursor { display: none; }
+  body { cursor: auto; }
+  header {
+    align-items: flex-start;
+  }
+  .logo-main {
+    font-size: .95rem;
+    letter-spacing: 4px;
+  }
+  .logo-sub {
+    letter-spacing: 2px;
+  }
+  nav {
+    width: 100%;
+    justify-content: flex-start;
+    gap: 14px;
+  }
+  .nav-link {
+    font-size: .68rem;
+    letter-spacing: 2px;
+  }
+  .hero {
+    min-height: auto;
+    align-items: center;
+    text-align: center;
+    padding: 116px 20px 56px;
+  }
+  .hero-overline {
+    justify-content: center;
+    gap: 8px;
+    letter-spacing: 3px;
+  }
+  .hero-title {
+    font-size: clamp(2.35rem, 11vw, 4.2rem);
+    line-height: .92;
+    letter-spacing: -1px;
+  }
+  .hero-desc {
+    max-width: 100%;
+    font-size: .96rem;
+  }
+  .hero-cta {
+    width: 100%;
+    justify-content: center;
+  }
+  .mag-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  .ticker {
+    font-size: .68rem;
+    letter-spacing: 3px;
+  }
+  .section,
+  .payment-section {
+    padding-top: 92px;
+    padding-bottom: 92px;
+  }
+  .section-title {
+    margin-bottom: 40px;
+  }
+  .features-grid,
+  .price-section,
+  .payment-inner {
+    grid-template-columns: 1fr;
+  }
+  .feat,
+  .price-left,
+  .price-right,
+  .payment-card {
+    padding: 28px 22px;
+    clip-path: none;
+  }
+  .price-left .amount {
+    font-size: 5.5rem;
+    letter-spacing: -4px;
+  }
+  .price-left::after {
+    font-size: 11rem;
+  }
+  .payment-info h2 {
+    font-size: clamp(1.9rem, 9vw, 3rem);
+  }
+  .steps {
+    gap: 14px;
+  }
+  .step {
+    padding: 18px 18px;
+  }
+  .qr-frame img {
+    width: 160px;
+    height: 160px;
+  }
+  .btn-upi,
+  .btn-whatsapp {
+    width: 100%;
+  }
+  .stats-row {
+    grid-template-columns: 1fr;
+  }
+  .stat {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding: 34px 22px;
+  }
+  .stat:last-child {
+    border-bottom: none;
+  }
+  footer {
+    justify-content: center;
+    text-align: center;
+    padding-top: 22px;
+    padding-bottom: 22px;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero {
+    padding-top: 108px;
+  }
+  .hero-title {
+    font-size: clamp(2.1rem, 10vw, 3.6rem);
+    line-height: .9;
+  }
+  .hero-overline {
+    flex-wrap: wrap;
+    row-gap: 6px;
+  }
+  .section-label {
+    letter-spacing: 4px;
+  }
+  .section-title {
+    font-size: clamp(2rem, 11vw, 3rem);
+  }
+  .feat-num {
+    font-size: 3rem;
+  }
+  .price-right h3 {
+    font-size: 1.6rem;
+  }
+  .qr-frame {
+    padding: 12px;
+  }
+  .qr-frame img {
+    width: 148px;
+    height: 148px;
+  }
+  .upi-chip {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+  .btn-upi,
+  .btn-whatsapp {
+    font-size: .8rem;
+    letter-spacing: 2px;
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+}
+
+@media (hover: none), (pointer: coarse) {
+  body {
+    cursor: auto;
+  }
+  #cursor {
+    display: none;
+  }
+  .mag-btn,
+  .btn-upi,
+  .btn-whatsapp,
+  .upi-chip {
+    cursor: pointer;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- CURSOR -->
+<div id="cursor"><div id="cursor-dot"></div><div id="cursor-ring"></div></div>
+
+<!-- SCROLL PROGRESS -->
+<div id="progress"></div>
+
+<!-- PAGE TRANSITION -->
+<div class="page-transition" id="page-transition"></div>
+
+<!-- NOISE -->
+<div class="noise"></div>
+
+<!-- WEBGL CANVAS -->
+<canvas id="gl-canvas"></canvas>
+
+<!-- HEADER -->
+<header id="header">
+  <div class="logo-wrap">
+    <a class="logo-main" href="index.html">Fans Association Club</a>
+    <span class="logo-sub">IPL Season 2026</span>
+  </div>
+  <nav>
+    <a class="nav-link" href="#features">Features</a>
+    <a class="nav-link" href="#pay">Join</a>
+    <a class="nav-link" href="terms.html" id="terms-link">T&amp;C</a>
+  </nav>
+</header>
+
+<!-- HERO -->
+<section class="hero" id="hero">
+  <div class="hero-overline" id="hero-overline">
+    <span class="live-dot"></span> Live Season — IPL 2026 &nbsp;·&nbsp; Limited Slots
+  </div>
+  <h1 class="hero-title" id="hero-title">
+    <span class="line"><span>THE ULTIMATE</span></span>
+    <span class="line"><span class="accent">IPL FAN</span></span>
+    <span class="line"><span class="stroke">CLUB</span></span>
+  </h1>
+  <p class="hero-desc" id="hero-desc">Pay just ₹21. Enter the lucky draw. Win 2 IPL match tickets and join the most electric cricket fan community on the internet.</p>
+  <div class="hero-cta" id="hero-cta">
+    <a href="#pay" class="mag-btn mag-btn-primary"><span>Join for ₹21</span></a>
+    <a href="#features" class="mag-btn mag-btn-outline"><span>See Benefits</span></a>
+  </div>
+</section>
+
+<!-- TICKER -->
+<div class="ticker-wrap">
+  <div class="ticker">
+    <span>Win IPL Tickets</span><span class="sep">✦</span>
+    <span>100% Transparent Draw</span><span class="sep">✦</span>
+    <span>Premium Fan Community</span><span class="sep">✦</span>
+    <span>Live WhatsApp Updates</span><span class="sep">✦</span>
+    <span>Only ₹21 to Join</span><span class="sep">✦</span>
+    <span>Win IPL Tickets</span><span class="sep">✦</span>
+    <span>100% Transparent Draw</span><span class="sep">✦</span>
+    <span>Premium Fan Community</span><span class="sep">✦</span>
+    <span>Live WhatsApp Updates</span><span class="sep">✦</span>
+    <span>Only ₹21 to Join</span><span class="sep">✦</span>
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="stats-row">
+  <div class="stat">
+    <span class="stat-val" data-target="2">0</span>
+    <span class="stat-label">IPL Tickets to Win</span>
+  </div>
+  <div class="stat">
+    <span class="stat-val" data-target="100">0</span>
+    <span class="stat-label">% Transparent Draw</span>
+  </div>
+  <div class="stat">
+    <span class="stat-val" data-prefix="₹" data-target="21">0</span>
+    <span class="stat-label">Membership Fee</span>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section class="section" id="features">
+  <div class="section-label">Why Join</div>
+  <div class="section-title">Everything<br>You Get</div>
+  <div class="features-grid">
+    <div class="feat" data-reveal>
+      <div class="feat-num">01</div>
+      <div class="feat-icon-wrap">🎟️</div>
+      <h3>Win 2 IPL Tickets</h3>
+      <p>Every member gets one lucky draw entry for a chance to win 2 IPL match tickets — completely free, no catches.</p>
+    </div>
+    <div class="feat" data-reveal>
+      <div class="feat-num">02</div>
+      <div class="feat-icon-wrap">🔥</div>
+      <h3>Live Transparent Draw</h3>
+      <p>Winners are picked live on Instagram &amp; WhatsApp for everyone to watch. Fair, open, and verifiable in real time.</p>
+    </div>
+    <div class="feat" data-reveal>
+      <div class="feat-num">03</div>
+      <div class="feat-icon-wrap">🏏</div>
+      <h3>Premium Community</h3>
+      <p>Real-time match analysis, viral cricket memes, exclusive updates, and surprise rewards — inside our closed group.</p>
+    </div>
+    <div class="feat" data-reveal>
+      <div class="feat-num">04</div>
+      <div class="feat-icon-wrap">🚀</div>
+      <h3>Limited Slots Only</h3>
+      <p>We cap entries to keep quality high and odds meaningful. Once full, the gate closes — no exceptions.</p>
+    </div>
+  </div>
+</section>
+
+<!-- PRICE -->
+<section class="section" style="padding-top:0" id="pricing">
+  <div class="section-label">Pricing</div>
+  <div class="price-section">
+    <div class="price-left" data-reveal>
+      <div class="label">One-time entry</div>
+      <div class="amount"><sup>₹</sup>21</div>
+      <div class="note">Community membership only — not gambling or betting</div>
+    </div>
+    <div class="price-right" data-reveal>
+      <div>
+        <h3>What's Included</h3>
+        <p>A single payment of ₹21 gets you full membership, one lucky draw entry, and lifetime access to the IPL fan community for the 2026 season. No hidden fees. No recurring charges.</p>
+      </div>
+      <a href="#pay" class="mag-btn mag-btn-primary" style="align-self:flex-start;margin-top:32px"><span>Pay &amp; Join Now →</span></a>
+    </div>
+  </div>
+</section>
+
+<!-- PAYMENT -->
+<section class="section payment-section" id="pay">
+  <div class="payment-inner">
+    <div class="payment-info">
+      <div class="section-label">Payment</div>
+      <h2>3 Steps to<br><em>Join the Club</em></h2>
+      <p>Simple, fast, secure. Pay via UPI in seconds and get instant access to our premium community.</p>
+      <div class="steps">
+        <div class="step" data-reveal>
+          <span class="step-num">01</span>
+          <div class="step-text">
+            <strong>Scan QR or Copy UPI ID</strong>
+            <span>Use any UPI app — GPay, PhonePe, Paytm. Pay exactly ₹21.</span>
+          </div>
+        </div>
+        <div class="step" data-reveal>
+          <span class="step-num">02</span>
+          <div class="step-text">
+            <strong>Take a Screenshot</strong>
+            <span>Screenshot your payment confirmation from your UPI app.</span>
+          </div>
+        </div>
+        <div class="step" data-reveal>
+          <span class="step-num">03</span>
+          <div class="step-text">
+            <strong>Send on WhatsApp</strong>
+            <span>Tap the WhatsApp button below — we'll verify and add you within minutes.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="payment-card" data-reveal>
+      <div class="qr-container">
+        <div class="qr-frame">
+          <div class="scan-line"></div>
+          <img src="photo.jpeg" onerror="this.onerror=null;this.src='photo.png';" alt="UPI QR Code"/>
+        </div>
+      </div>
+      <br>
+      <div class="upi-chip" onclick="copyUPI()" id="upi-chip">
+        <svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Q239271413@ybl
+      </div>
+      <a class="btn-upi" href="upi://pay?pa=Q239271413@ybl&pn=FansAssociationClub&am=21&cu=INR&tn=IPL%20Fan%20Club%20Membership">
+        <span>PAY ₹21 NOW</span>
+      </a>
+      <a class="btn-whatsapp" href="https://wa.me/918790920703?text=Hi!%20I%20paid%20₹21%20for%20the%20IPL%20Fan%20Club.%20Here%20is%20my%20payment%20screenshot." target="_blank">
+        <svg class="wa-icon" viewBox="0 0 32 32" fill="currentColor"><path d="M16 0C7.163 0 0 7.163 0 16c0 2.822.736 5.468 2.027 7.77L0 32l8.437-2.007A15.938 15.938 0 0016 32c8.837 0 16-7.163 16-16S24.837 0 16 0zm0 29.333a13.27 13.27 0 01-6.77-1.847l-.485-.288-5.008 1.192 1.213-4.873-.315-.498A13.27 13.27 0 012.667 16C2.667 8.636 8.636 2.667 16 2.667S29.333 8.636 29.333 16 23.364 29.333 16 29.333zm7.261-9.981c-.398-.199-2.353-1.162-2.718-1.295-.365-.133-.63-.199-.896.199-.265.398-1.029 1.295-1.261 1.561-.232.266-.465.299-.863.1-.398-.2-1.68-.619-3.2-1.976-1.183-1.056-1.981-2.36-2.213-2.758-.232-.398-.025-.613.174-.811.179-.178.398-.465.597-.698.199-.232.265-.398.398-.664.133-.265.066-.498-.033-.697-.1-.199-.896-2.159-1.228-2.957-.323-.778-.651-.672-.896-.684-.232-.011-.498-.014-.763-.014a1.46 1.46 0 00-1.062.498c-.365.398-1.394 1.362-1.394 3.321s1.427 3.852 1.626 4.118c.199.265 2.808 4.287 6.803 6.015.951.411 1.693.656 2.271.839.954.304 1.823.261 2.509.158.765-.114 2.353-.962 2.685-1.891.332-.929.332-1.725.232-1.891-.1-.166-.365-.265-.763-.465z"/></svg>
+        Send Screenshot on WhatsApp
+      </a>
+      <div class="pay-note">
+        By paying you agree to our <a href="terms.html">Terms &amp; Conditions</a>.<br>
+        Membership fee is non-refundable. Not a gambling platform.
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <span>© 2026 Fans Association Club</span>
+  <span>IPL Season 2026 &nbsp;·&nbsp; All Rights Reserved</span>
+  <a href="terms.html">Terms &amp; Conditions</a>
+</footer>
+
+<div class="toast" id="toast">✓ UPI ID copied to clipboard</div>
+
+<script>
+gsap.registerPlugin(ScrollTrigger);
+
+/* ─── WebGL Particle Field ─── */
+(function() {
+  const canvas = document.getElementById('gl-canvas');
+  const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+  if (!gl) return;
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    gl.viewport(0, 0, canvas.width, canvas.height);
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  const N = 220;
+  const positions = new Float32Array(N * 2);
+  const velocities = [];
+  for (let i = 0; i < N; i++) {
+    positions[i*2]   = Math.random() * 2 - 1;
+    positions[i*2+1] = Math.random() * 2 - 1;
+    velocities.push({ vx: (Math.random()-.5)*.0008, vy: (Math.random()-.5)*.0008 });
+  }
+
+  const vsSource = `
+    attribute vec2 a_pos;
+    uniform float u_size;
+    void main() {
+      gl_Position = vec4(a_pos, 0.0, 1.0);
+      gl_PointSize = u_size;
+    }`;
+  const fsSource = `
+    precision mediump float;
+    uniform vec4 u_color;
+    void main() {
+      float d = distance(gl_PointCoord, vec2(.5));
+      if(d > .5) discard;
+      gl_FragColor = vec4(u_color.rgb, u_color.a * (1.0 - d*2.0));
+    }`;
+
+  function compile(type, src) {
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src); gl.compileShader(s); return s;
+  }
+  const prog = gl.createProgram();
+  gl.attachShader(prog, compile(gl.VERTEX_SHADER, vsSource));
+  gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, fsSource));
+  gl.linkProgram(prog); gl.useProgram(prog);
+
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  const posLoc = gl.getAttribLocation(prog, 'a_pos');
+  const sizeLoc = gl.getUniformLocation(prog, 'u_size');
+  const colorLoc = gl.getUniformLocation(prog, 'u_color');
+
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+  let mouse = { x: 0, y: 0 };
+  window.addEventListener('mousemove', e => {
+    mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -((e.clientY / window.innerHeight) * 2 - 1);
+  });
+
+  function render() {
+    gl.clearColor(0,0,0,0); gl.clear(gl.COLOR_BUFFER_BIT);
+    for (let i = 0; i < N; i++) {
+      const dx = mouse.x - positions[i*2];
+      const dy = mouse.y - positions[i*2+1];
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist < .18) {
+        velocities[i].vx -= dx * .00012;
+        velocities[i].vy -= dy * .00012;
+      }
+      velocities[i].vx *= .998;
+      velocities[i].vy *= .998;
+      positions[i*2]   += velocities[i].vx;
+      positions[i*2+1] += velocities[i].vy;
+      if (positions[i*2]   > 1.1) positions[i*2]   = -1.1;
+      if (positions[i*2]   < -1.1) positions[i*2]  =  1.1;
+      if (positions[i*2+1] > 1.1) positions[i*2+1] = -1.1;
+      if (positions[i*2+1] < -1.1) positions[i*2+1] =  1.1;
+    }
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, positions, gl.DYNAMIC_DRAW);
+    gl.enableVertexAttribArray(posLoc);
+    gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+    gl.uniform1f(sizeLoc, 2.5);
+    gl.uniform4f(colorLoc, 0.94, 0.65, 0.0, 0.55);
+    gl.drawArrays(gl.POINTS, 0, N);
+    requestAnimationFrame(render);
+  }
+  render();
+})();
+
+/* ─── Custom Cursor ─── */
+const dot  = document.getElementById('cursor-dot');
+const ring = document.getElementById('cursor-ring');
+let mx=0, my=0, rx=0, ry=0;
+window.addEventListener('mousemove', e => { mx=e.clientX; my=e.clientY; });
+(function animCursor() {
+  rx += (mx-rx)*.12; ry += (my-ry)*.12;
+  dot.style.left  = mx+'px'; dot.style.top  = my+'px';
+  ring.style.left = rx+'px'; ring.style.top = ry+'px';
+  requestAnimationFrame(animCursor);
+})();
+document.querySelectorAll('a,button,.mag-btn,.upi-chip,.feat,.step').forEach(el => {
+  el.addEventListener('mouseenter', () => document.body.classList.add('hovering'));
+  el.addEventListener('mouseleave', () => document.body.classList.remove('hovering'));
+});
+
+/* ─── Scroll Progress ─── */
+const prog = document.getElementById('progress');
+window.addEventListener('scroll', () => {
+  const p = window.scrollY / (document.body.scrollHeight - window.innerHeight);
+  prog.style.transform = `scaleX(${p})`;
+});
+
+/* ─── GSAP Header ─── */
+gsap.to('#header', { translateY: 0, duration: 1, delay: .5, ease: 'power4.out' });
+
+/* ─── Hero Animation ─── */
+const tl = gsap.timeline({ delay: .2 });
+tl.to('#hero-overline', { opacity:1, y:0, duration:.8, ease:'power3.out' })
+  .to('#hero-title .line span', {
+    y: 0, duration: 1, stagger: .12, ease: 'power4.out'
+  }, '-=.4')
+  .to('#hero-desc', { opacity:1, y:0, duration:.8, ease:'power3.out' }, '-=.5')
+  .to('#hero-cta',  { opacity:1, y:0, duration:.8, ease:'power3.out' }, '-=.5');
+
+/* ─── Scroll Reveals ─── */
+gsap.utils.toArray('[data-reveal]').forEach((el, i) => {
+  gsap.fromTo(el,
+    { opacity:0, y:48, scale:.97 },
+    { opacity:1, y:0, scale:1,
+      duration: .9, ease:'power3.out',
+      scrollTrigger: {
+        trigger: el, start:'top 88%', toggleActions:'play none none none'
+      },
+      delay: i%2 * .12
+    }
+  );
+});
+
+/* ─── Stats Counter ─── */
+document.querySelectorAll('.stat-val').forEach(el => {
+  const target = +el.dataset.target;
+  const prefix = el.dataset.prefix || '';
+  ScrollTrigger.create({
+    trigger: el, start:'top 85%',
+    onEnter: () => {
+      gsap.fromTo({ val:0 }, { val: target },
+        { duration: 1.8, ease:'power2.out',
+          onUpdate: function() { el.textContent = prefix + Math.round(this.targets()[0].val); }
+        });
+    }
+  });
+});
+
+/* ─── Magnetic Buttons ─── */
+document.querySelectorAll('.mag-btn').forEach(btn => {
+  btn.addEventListener('mousemove', e => {
+    const r = btn.getBoundingClientRect();
+    const x = e.clientX - r.left - r.width/2;
+    const y = e.clientY - r.top  - r.height/2;
+    gsap.to(btn, { x: x*.25, y: y*.25, duration:.4, ease:'power2.out' });
+  });
+  btn.addEventListener('mouseleave', () => {
+    gsap.to(btn, { x:0, y:0, duration:.6, ease:'elastic.out(1,.5)' });
+  });
+});
+
+/* ─── Page Transition to Terms ─── */
+document.getElementById('terms-link').addEventListener('click', e => {
+  e.preventDefault();
+  const overlay = document.getElementById('page-transition');
+  gsap.to(overlay, {
+    scaleX: 1, duration: .6, ease:'power4.inOut',
+    onComplete: () => window.location.href = 'terms.html'
+  });
+});
+
+/* ─── Copy UPI ─── */
+function copyUPI() {
+  navigator.clipboard.writeText('Q239271413@ybl').then(() => {
+    const t = document.getElementById('toast');
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2800);
+  });
+}
+</script>
+</body>
+</html>
